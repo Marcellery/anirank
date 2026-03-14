@@ -1,0 +1,51 @@
+{
+  "name": "anirank",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint",
+    "type-check": "tsc --noEmit",
+    "test": "jest --watchAll=false"
+  },
+  "dependencies": {
+    "expo": "~52.0.28",
+    "expo-router": "~4.0.17",
+    "expo-status-bar": "~2.0.1",
+    "expo-font": "~13.0.3",
+    "expo-image": "~2.0.5",
+    "expo-linear-gradient": "~14.0.2",
+    "expo-haptics": "~14.0.1",
+    "expo-sharing": "~13.0.1",
+    "expo-media-library": "~17.0.5",
+    "expo-secure-store": "~14.0.1",
+    "expo-constants": "~17.0.5",
+    "react": "18.3.2",
+    "react-native": "0.76.7",
+    "react-native-gesture-handler": "~2.20.2",
+    "react-native-reanimated": "~3.16.2",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
+    "@supabase/supabase-js": "^2.46.2",
+    "zustand": "^5.0.2",
+    "@tanstack/react-query": "^5.62.8"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~18.3.18",
+    "typescript": "^5.3.3",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^8.57.0",
+    "eslint-config-expo": "~8.0.0",
+    "jest": "^29.7.0",
+    "jest-expo": "~52.0.5",
+    "@testing-library/react-native": "^12.8.1"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  },
+  "private": true
+}
