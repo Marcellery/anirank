@@ -1,3 +1,5 @@
+import type { AnimeType } from './database';
+
 // Re-export the Database shape and all enum types from the single source of truth.
 export type { Database, AnimeType, WatchStatus, FriendStatus, CardType } from './database';
 

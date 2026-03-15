@@ -1,7 +1,7 @@
 import { supabase } from '@services/supabase';
 import { calculateEloUpdate } from '@utils/elo';
-import type { Database } from '@types/index';
-import type { BattlePair, BattleResult } from '@types/index';
+import type { Database } from '@app-types/index';
+import type { BattlePair, BattleResult } from '@app-types/index';
 
 type UserRankingRow = Database['public']['Tables']['user_rankings']['Row'];
 type AnimeRow       = Database['public']['Tables']['anime']['Row'];

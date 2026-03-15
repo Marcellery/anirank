@@ -1,6 +1,6 @@
 import { supabase } from '@services/supabase';
-import type { Database } from '@types/index';
-import type { UserRanking } from '@types/index';
+import type { Database } from '@app-types/index';
+import type { UserRanking } from '@app-types/index';
 
 type UserRankingRow = Database['public']['Tables']['user_rankings']['Row'];
 type AnimeRow       = Database['public']['Tables']['anime']['Row'];

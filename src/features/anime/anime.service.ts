@@ -1,5 +1,5 @@
 import { supabase } from '@services/supabase';
-import type { Database, WatchStatus } from '@types/index';
+import type { Database, WatchStatus } from '@app-types/index';
 
 type AnimeRow      = Database['public']['Tables']['anime']['Row'];
 type UserAnimeRow  = Database['public']['Tables']['user_anime']['Row'];

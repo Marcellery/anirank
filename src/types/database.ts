@@ -47,6 +47,7 @@ export type Database = {
           username?:   string;
           avatar_url?: string | null;
         };
+        Relationships: [];
       };
 
       // -------------------------------------------------------------------
@@ -78,6 +79,7 @@ export type Database = {
           episode_count?: number | null;
           release_year?:  number | null;
         };
+        Relationships: [];
       };
 
       // -------------------------------------------------------------------
@@ -101,6 +103,22 @@ export type Database = {
         Update: {
           watch_status?: WatchStatus;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'user_anime_anime_id_fkey';
+            columns: ['anime_id'];
+            isOneToOne: false;
+            referencedRelation: 'anime';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_anime_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
 
       // -------------------------------------------------------------------
@@ -131,6 +149,22 @@ export type Database = {
           battle_count?:  number;
           rank_position?: number | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'user_rankings_anime_id_fkey';
+            columns: ['anime_id'];
+            isOneToOne: false;
+            referencedRelation: 'anime';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_rankings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
 
       // -------------------------------------------------------------------
@@ -152,7 +186,8 @@ export type Database = {
           winner_id:  string;
           loser_id:   string;
         };
-        Update: never;  // immutable
+        Update: Record<string, never>;  // immutable — no columns may be updated
+        Relationships: [];
       };
 
       // -------------------------------------------------------------------
@@ -181,6 +216,22 @@ export type Database = {
         Update: {
           status?: FriendStatus;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'friends_requester_id_fkey';
+            columns: ['requester_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'friends_addressee_id_fkey';
+            columns: ['addressee_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
 
       // -------------------------------------------------------------------
@@ -204,8 +255,18 @@ export type Database = {
         Update: {
           image_url?: string | null;
         };
+        Relationships: [];
       };
 
     };
+    Views: {};
+    Functions: {};
+    Enums: {
+      anime_type:    AnimeType;
+      watch_status:  WatchStatus;
+      friend_status: FriendStatus;
+      card_type:     CardType;
+    };
+    CompositeTypes: Record<string, never>;
   };
 };

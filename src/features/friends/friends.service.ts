@@ -1,5 +1,5 @@
 import { supabase } from '@services/supabase';
-import type { Database, FriendStatus } from '@types/index';
+import type { Database, FriendStatus } from '@app-types/index';
 
 type FriendRow   = Database['public']['Tables']['friends']['Row'];
 type ProfileRow  = Database['public']['Tables']['profiles']['Row'];

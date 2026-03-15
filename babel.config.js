@@ -17,14 +17,12 @@ module.exports = function (api) {
             '@services':  './src/services',
             '@stores':    './src/stores',
             '@hooks':     './src/hooks',
-            '@types':     './src/types',
+            '@app-types': './src/types',
             '@constants': './src/constants',
             '@utils':     './src/utils',
           },
         },
       ],
-      // react-native-reanimated MUST be listed last
-      'react-native-reanimated/plugin',
     ],
   };
 };
