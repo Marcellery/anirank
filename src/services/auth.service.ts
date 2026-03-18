@@ -32,6 +32,9 @@ export async function signUp({ email, password, username }: SignUpParams) {
     password,
     options: {
       data: { username },
+      // Supabase will append ?code=... to this URL after verification (PKCE flow).
+      // Expo Router opens anirank://auth/confirm and renders app/auth/confirm.tsx.
+      emailRedirectTo: 'anirank://auth/confirm',
     },
   });
 

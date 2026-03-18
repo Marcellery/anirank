@@ -48,5 +48,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE ensures confirmation redirects arrive as ?code= query params,
+    // which Expo Router can read via useLocalSearchParams().
+    flowType: 'pkce',
   },
 });

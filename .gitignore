@@ -17,3 +17,31 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli
+supabase/migrations/.env.local
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

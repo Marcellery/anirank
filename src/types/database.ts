@@ -1,272 +1,319 @@
 /**
  * Hand-maintained Supabase database types.
- * Every column here matches the SQL migrations in supabase/migrations/ exactly.
- *
- * When your Supabase project is live you can replace this file with the
- * auto-generated version:
- *   npx supabase gen types typescript \
- *     --project-id <your-project-ref> \
- *     --schema public \
- *     > src/types/database.ts
+ * Mirrors the SQL schema exactly.
  */
 
-// ---------------------------------------------------------------------------
-// Enum mirrors — must match the SQL CREATE TYPE statements
-// ---------------------------------------------------------------------------
-
-export type AnimeType    = 'series' | 'movie';
-export type WatchStatus  = 'watching' | 'completed' | 'plan_to_watch' | 'dropped';
-export type FriendStatus = 'pending' | 'accepted' | 'blocked';
-export type CardType     = 'top10' | 'top25';
-
-// ---------------------------------------------------------------------------
-// Database shape
-// ---------------------------------------------------------------------------
+export type AnimeType = 'series' | 'movie'
+export type WatchStatus = 'watching' | 'completed' | 'plan_to_watch' | 'dropped'
+export type FriendStatus = 'pending' | 'accepted' | 'blocked'
+export type CardType = 'top10' | 'top25'
+export type CatalogType = 'series_root' | 'standalone_work' | 'franchise_child'
 
 export type Database = {
   public: {
     Tables: {
 
-      // -------------------------------------------------------------------
-      // profiles
-      // id mirrors auth.users.id — created by trigger on sign-up
-      // -------------------------------------------------------------------
       profiles: {
         Row: {
-          id:          string;       // uuid — FK → auth.users
-          username:    string;       // 2–30 chars, alphanumeric + underscore
-          avatar_url:  string | null;
-          created_at:  string;       // timestamptz
-        };
+          id: string
+          username: string
+          avatar_url: string | null
+          created_at: string
+        }
         Insert: {
-          id:         string;
-          username:   string;
-          avatar_url?: string | null;
-        };
+          id: string
+          username: string
+          avatar_url?: string | null
+        }
         Update: {
-          username?:   string;
-          avatar_url?: string | null;
-        };
-        Relationships: [];
-      };
+          username?: string
+          avatar_url?: string | null
+        }
+        Relationships: []
+      }
 
-      // -------------------------------------------------------------------
-      // anime
-      // Read-only for normal users; populated by service role / seed scripts
-      // -------------------------------------------------------------------
       anime: {
         Row: {
-          id:            string;          // uuid
-          title:         string;
-          poster:        string | null;   // URL
-          type:          AnimeType;
-          episode_count: number | null;
-          release_year:  number | null;
-          created_at:    string;
-        };
-        Insert: {
-          id?:            string;
-          title:          string;
-          poster?:        string | null;
-          type:           AnimeType;
-          episode_count?: number | null;
-          release_year?:  number | null;
-        };
-        Update: {
-          title?:         string;
-          poster?:        string | null;
-          type?:          AnimeType;
-          episode_count?: number | null;
-          release_year?:  number | null;
-        };
-        Relationships: [];
-      };
+          id: string
+          title: string
+          poster: string | null
+          type: AnimeType
+          episode_count: number | null
+          release_year: number | null
+          created_at: string
 
-      // -------------------------------------------------------------------
-      // user_anime
-      // One row per (user, anime) — user's personal watch list
-      // -------------------------------------------------------------------
+          anilist_id: number | null
+          title_romaji: string | null
+          title_english: string | null
+          title_native: string | null
+
+          cover_image_extra_large: string | null
+          cover_image_large: string | null
+          cover_image_medium: string | null
+
+          description: string | null
+          format: string | null
+          status: string | null
+
+          season_year: number | null
+          episodes: number | null
+
+          is_canonical: boolean
+          franchise_episode_total: number | null
+          franchise_root_id: string | null
+          title_normalized: string | null
+          prequel_anilist_id: number | null
+
+          catalog_type: CatalogType
+
+          synced_at: string | null
+          next_airing_episode: number | null
+          next_airing_at: string | null
+        }
+
+        Insert: {
+          id?: string
+          title: string
+          poster?: string | null
+          type: AnimeType
+          episode_count?: number | null
+          release_year?: number | null
+
+          anilist_id?: number | null
+          title_romaji?: string | null
+          title_english?: string | null
+          title_native?: string | null
+
+          cover_image_extra_large?: string | null
+          cover_image_large?: string | null
+          cover_image_medium?: string | null
+
+          description?: string | null
+          format?: string | null
+          status?: string | null
+
+          season_year?: number | null
+          episodes?: number | null
+
+          is_canonical?: boolean
+          franchise_episode_total?: number | null
+          franchise_root_id?: string | null
+          title_normalized?: string | null
+          prequel_anilist_id?: number | null
+
+          catalog_type?: CatalogType
+
+          synced_at?: string | null
+          next_airing_episode?: number | null
+          next_airing_at?: string | null
+        }
+
+        Update: {
+          title?: string
+          poster?: string | null
+          type?: AnimeType
+          episode_count?: number | null
+          release_year?: number | null
+
+          anilist_id?: number | null
+          title_romaji?: string | null
+          title_english?: string | null
+          title_native?: string | null
+
+          cover_image_extra_large?: string | null
+          cover_image_large?: string | null
+          cover_image_medium?: string | null
+
+          description?: string | null
+          format?: string | null
+          status?: string | null
+
+          season_year?: number | null
+          episodes?: number | null
+
+          is_canonical?: boolean
+          franchise_episode_total?: number | null
+          franchise_root_id?: string | null
+          title_normalized?: string | null
+          prequel_anilist_id?: number | null
+
+          catalog_type?: CatalogType
+
+          synced_at?: string | null
+          next_airing_episode?: number | null
+          next_airing_at?: string | null
+        }
+
+        Relationships: []
+      }
+
       user_anime: {
         Row: {
-          id:           string;       // uuid
-          user_id:      string;       // uuid → profiles.id
-          anime_id:     string;       // uuid → anime.id
-          watch_status: WatchStatus;
-          added_at:     string;       // timestamptz
-        };
+          id: string
+          user_id: string
+          anime_id: string
+          watch_status: WatchStatus
+          added_at: string
+        }
+
         Insert: {
-          id?:           string;
-          user_id:       string;
-          anime_id:      string;
-          watch_status?: WatchStatus;
-        };
+          id?: string
+          user_id: string
+          anime_id: string
+          watch_status?: WatchStatus
+        }
+
         Update: {
-          watch_status?: WatchStatus;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_anime_anime_id_fkey';
-            columns: ['anime_id'];
-            isOneToOne: false;
-            referencedRelation: 'anime';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_anime_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
+          watch_status?: WatchStatus
+        }
 
-      // -------------------------------------------------------------------
-      // user_rankings
-      // One row per (user, anime) — Elo score + battle count
-      // Created automatically by trigger when user_anime row is inserted
-      // -------------------------------------------------------------------
-      user_rankings: {
+        Relationships: []
+      }
+
+      user_battles: {
         Row: {
-          id:            string;        // uuid
-          user_id:       string;        // uuid → profiles.id
-          anime_id:      string;        // uuid → anime.id
-          elo_score:     number;        // default 1500
-          battle_count:  number;        // default 0
-          rank_position: number | null; // null until first battle
-          updated_at:    string;        // timestamptz — auto-updated by trigger
-        };
+          id: string
+          user_id: string
+          anime_a_id: string
+          anime_b_id: string
+          winner_anime_id: string
+          loser_anime_id: string
+          created_at: string
+        }
+
         Insert: {
-          id?:            string;
-          user_id:        string;
-          anime_id:       string;
-          elo_score?:     number;
-          battle_count?:  number;
-          rank_position?: number | null;
-        };
+          id?: string
+          user_id: string
+          anime_a_id: string
+          anime_b_id: string
+          winner_anime_id: string
+          loser_anime_id: string
+        }
+
+        Update: Record<string, never>
+
+        Relationships: []
+      }
+
+      user_anime_rank_state: {
+        Row: {
+          id: string
+          user_id: string
+          anime_id: string
+          hidden_rating: number
+          battle_count: number
+          wins: number
+          losses: number
+          last_battled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+
+        Insert: {
+          id?: string
+          user_id: string
+          anime_id: string
+          hidden_rating?: number
+          battle_count?: number
+          wins?: number
+          losses?: number
+          last_battled_at?: string | null
+        }
+
         Update: {
-          elo_score?:     number;
-          battle_count?:  number;
-          rank_position?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_rankings_anime_id_fkey';
-            columns: ['anime_id'];
-            isOneToOne: false;
-            referencedRelation: 'anime';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_rankings_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
+          hidden_rating?: number
+          battle_count?: number
+          wins?: number
+          losses?: number
+          last_battled_at?: string | null
+          updated_at?: string
+        }
 
-      // -------------------------------------------------------------------
-      // comparisons
-      // Append-only battle log — no UPDATE or DELETE for users
-      // winner_id / loser_id are anime IDs, not user IDs
-      // -------------------------------------------------------------------
-      comparisons: {
-        Row: {
-          id:         string;  // uuid
-          user_id:    string;  // uuid → profiles.id
-          winner_id:  string;  // uuid → anime.id
-          loser_id:   string;  // uuid → anime.id
-          created_at: string;  // timestamptz
-        };
-        Insert: {
-          id?:        string;
-          user_id:    string;
-          winner_id:  string;
-          loser_id:   string;
-        };
-        Update: Record<string, never>;  // immutable — no columns may be updated
-        Relationships: [];
-      };
+        Relationships: []
+      }
 
-      // -------------------------------------------------------------------
-      // friends
-      // Canonical pair uniqueness: (canonical_a, canonical_b) where
-      // canonical_a = least(requester_id, addressee_id) always.
-      // The trigger sets canonical_a/b automatically on insert.
-      // -------------------------------------------------------------------
       friends: {
         Row: {
-          id:            string;        // uuid
-          requester_id:  string;        // uuid → profiles.id
-          addressee_id:  string;        // uuid → profiles.id
-          status:        FriendStatus;
-          created_at:    string;        // timestamptz
-          canonical_a:   string;        // uuid — lesser of the pair
-          canonical_b:   string;        // uuid — greater of the pair
-        };
-        Insert: {
-          id?:           string;
-          requester_id:  string;
-          addressee_id:  string;
-          status?:       FriendStatus;
-          // canonical_a / canonical_b are set by DB trigger — do not supply
-        };
-        Update: {
-          status?: FriendStatus;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'friends_requester_id_fkey';
-            columns: ['requester_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'friends_addressee_id_fkey';
-            columns: ['addressee_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
+          id: string
+          requester_id: string
+          addressee_id: string
+          status: FriendStatus
+          created_at: string
+          canonical_a: string
+          canonical_b: string
+        }
 
-      // -------------------------------------------------------------------
-      // share_cards
-      // Generated Top 10 / Top 25 image cards; image_url → Supabase Storage
-      // -------------------------------------------------------------------
+        Insert: {
+          id?: string
+          requester_id: string
+          addressee_id: string
+          status?: FriendStatus
+        }
+
+        Update: {
+          status?: FriendStatus
+        }
+
+        Relationships: []
+      }
+
+      comparisons: {
+        Row: {
+          id: string
+          user_id: string
+          winner_id: string
+          loser_id: string
+          created_at: string
+        }
+
+        Insert: {
+          id?: string
+          user_id: string
+          winner_id: string
+          loser_id: string
+        }
+
+        Update: Record<string, never>
+
+        Relationships: []
+      }
+
       share_cards: {
         Row: {
-          id:         string;        // uuid
-          user_id:    string;        // uuid → profiles.id
-          card_type:  CardType;
-          image_url:  string | null; // URL → Supabase Storage
-          created_at: string;        // timestamptz
-        };
-        Insert: {
-          id?:        string;
-          user_id:    string;
-          card_type:  CardType;
-          image_url?: string | null;
-        };
-        Update: {
-          image_url?: string | null;
-        };
-        Relationships: [];
-      };
+          id: string
+          user_id: string
+          card_type: CardType
+          image_url: string | null
+          created_at: string
+        }
 
-    };
-    Views: {};
-    Functions: {};
+        Insert: {
+          id?: string
+          user_id: string
+          card_type: CardType
+          image_url?: string | null
+        }
+
+        Update: {
+          image_url?: string | null
+        }
+
+        Relationships: []
+      }
+
+    }
+
+    Views: {}
+
+    Functions: {}
+
     Enums: {
-      anime_type:    AnimeType;
-      watch_status:  WatchStatus;
-      friend_status: FriendStatus;
-      card_type:     CardType;
-    };
-    CompositeTypes: Record<string, never>;
-  };
-};
+      anime_type: AnimeType
+      watch_status: WatchStatus
+      friend_status: FriendStatus
+      card_type: CardType
+    }
+
+    CompositeTypes: Record<string, never>
+  }
+}

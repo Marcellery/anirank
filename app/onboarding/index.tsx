@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -39,32 +39,50 @@ function AnimeCard({
   selected: boolean;
   onToggle: () => void;
 }) {
+  // Prefer higher-quality cover images; fall back to legacy poster field
+  const imageUri =
+    anime.cover_image_medium ?? anime.cover_image_large ?? anime.poster ?? null;
+
+  // Prefer English title, fall back to romaji, then the generic title column
+  const displayTitle =
+    anime.title_english ?? anime.title_romaji ?? anime.title;
+
+  // Build a concise meta string: format · year · N eps
+  const year = anime.season_year ?? anime.release_year;
+  const fmt  = anime.format ?? (anime.type === 'movie' ? 'MOVIE' : 'TV');
+  // franchise_episode_total is the sum across all seasons; fall back to the
+  // per-row episode count for standalone entries that have no sequels.
+  const eps  = anime.franchise_episode_total ?? anime.episodes ?? anime.episode_count;
+  const meta = [
+    fmt,
+    year,
+    eps ? `${eps} eps` : null,
+  ].filter(Boolean).join(' · ');
+
   return (
     <TouchableOpacity
       style={[styles.animeCard, selected && styles.animeCardSelected]}
       onPress={onToggle}
       activeOpacity={0.75}
     >
-      {anime.poster ? (
+      {imageUri ? (
         <Image
-          source={{ uri: anime.poster }}
+          source={{ uri: imageUri }}
           style={styles.animePoster}
           resizeMode="cover"
         />
       ) : (
         <View style={[styles.animePoster, styles.animePosterPlaceholder]}>
           <Text style={styles.animePosterPlaceholderText}>
-            {anime.title.charAt(0).toUpperCase()}
+            {displayTitle.charAt(0).toUpperCase()}
           </Text>
         </View>
       )}
       <View style={styles.animeInfo}>
         <Text style={styles.animeTitle} numberOfLines={2}>
-          {anime.title}
+          {displayTitle}
         </Text>
-        <Text style={styles.animeMeta}>
-          {[anime.type, anime.release_year].filter(Boolean).join(' · ')}
-        </Text>
+        <Text style={styles.animeMeta}>{meta}</Text>
       </View>
       <View style={[styles.checkCircle, selected && styles.checkCircleSelected]}>
         {selected && <Text style={styles.checkMark}>✓</Text>}
