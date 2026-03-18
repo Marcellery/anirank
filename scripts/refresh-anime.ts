@@ -14,33 +14,36 @@
  *   - title_normalized
  *
  * Run on a schedule (daily cron recommended) to keep episode totals and
- * airing metadata current.  Safe to re-run at any time — all updates are
+ * airing metadata current. Safe to re-run at any time — all updates are
  * idempotent upserts by anilist_id.
  *
  * Usage:
  *   npx tsx scripts/refresh-anime.ts
  *
- * Required env vars (in .env.local):
+ * Required env vars:
  *   EXPO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
  *   SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
  */
 
-import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
 import * as dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
-dotenv.config({ path: '.env.local' });
+if (fs.existsSync('.env.local')) {
+  dotenv.config({ path: '.env.local' });
+}
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const BATCH_SIZE       = 50;    // AniList handles up to 50 IDs per request
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const BATCH_SIZE = 50;    // AniList handles up to 50 IDs per request
 const REQUEST_DELAY_MS = 1200;  // ~30 req/min AniList rate limit
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('Missing EXPO_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+  console.error('Missing EXPO_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
 }
 
@@ -116,6 +119,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 const VALID_STATUSES = new Set([
   'FINISHED', 'RELEASING', 'NOT_YET_RELEASED', 'CANCELLED', 'HIATUS',
 ]);
+
 function safeStatus(s: string | null): string | null {
   return s && VALID_STATUSES.has(s) ? s : null;
 }
@@ -123,6 +127,7 @@ function safeStatus(s: string | null): string | null {
 const VALID_FORMATS = new Set([
   'TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA', 'MUSIC',
 ]);
+
 function safeFormat(f: string | null): string | null {
   return f && VALID_FORMATS.has(f) ? f : null;
 }
@@ -144,9 +149,14 @@ async function fetchBatch(ids: number[]): Promise<AniListRefreshMedia[]> {
     return fetchBatch(ids);
   }
 
-  if (!res.ok) throw new Error(`AniList HTTP ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    throw new Error(`AniList HTTP ${res.status}: ${await res.text()}`);
+  }
 
-  const json = (await res.json()) as { data: { Page: { media: AniListRefreshMedia[] } } };
+  const json = (await res.json()) as {
+    data: { Page: { media: AniListRefreshMedia[] } };
+  };
+
   return json.data.Page.media;
 }
 
@@ -201,7 +211,6 @@ async function main() {
       process.exit(1);
     }
 
-    // Collect reverse SEQUEL edges from this batch.
     for (const m of anilistMedia) {
       for (const edge of m.relations?.edges ?? []) {
         if (
@@ -215,31 +224,24 @@ async function main() {
 
     const now = new Date().toISOString();
 
-    // Build update rows.
-    // title and type are required NOT NULL columns with no DB default — they
-    // must be included in every upsert so the INSERT side of ON CONFLICT is valid.
-    // Same selection logic as seed-anime.ts: title = english ?? romaji.
     const updates = anilistMedia.map((m) => ({
-      anilist_id:          m.id,
-      // Required NOT NULL columns — must always be present in upsert.
-      title:               m.title.english ?? m.title.romaji,
-      type:                mapFormat(m.format),
-      // Mutable metadata — reason this script exists.
-      title_romaji:        m.title.romaji,
-      title_english:       m.title.english ?? null,
-      title_native:        m.title.native  ?? null,
-      format:              safeFormat(m.format),
-      episodes:            m.episodes    ?? null,
-      episode_count:       m.episodes    ?? null,  // legacy column kept in sync
-      status:              safeStatus(m.status),
-      season_year:         m.seasonYear  ?? null,
-      release_year:        m.seasonYear  ?? null,  // legacy column kept in sync
-      // Airing metadata — migration 020 columns.
+      anilist_id: m.id,
+      title: m.title.english ?? m.title.romaji,
+      type: mapFormat(m.format),
+      title_romaji: m.title.romaji,
+      title_english: m.title.english ?? null,
+      title_native: m.title.native ?? null,
+      format: safeFormat(m.format),
+      episodes: m.episodes ?? null,
+      episode_count: m.episodes ?? null,
+      status: safeStatus(m.status),
+      season_year: m.seasonYear ?? null,
+      release_year: m.seasonYear ?? null,
       next_airing_episode: m.nextAiringEpisode?.episode ?? null,
-      next_airing_at:      m.nextAiringEpisode
-                             ? new Date(m.nextAiringEpisode.airingAt * 1000).toISOString()
-                             : null,
-      synced_at:           now,
+      next_airing_at: m.nextAiringEpisode
+        ? new Date(m.nextAiringEpisode.airingAt * 1000).toISOString()
+        : null,
+      synced_at: now,
     }));
 
     const { error: upsertError } = await supabase
@@ -263,8 +265,6 @@ async function main() {
 
   // -------------------------------------------------------------------------
   // Step 3 — Backfill prequel_anilist_id from reverse SEQUEL edges
-  // Same Phase 1.5 logic as seed-anime.ts — fills missing prequel links so
-  // resolve_franchise_roots() can follow complete chains.
   // -------------------------------------------------------------------------
 
   const seenSequel = new Set<number>();
@@ -279,6 +279,7 @@ async function main() {
     const { error: backfillError } = await supabase.rpc('backfill_prequel_from_edges', {
       edges: uniqueReverseEdges,
     });
+
     if (backfillError) {
       console.warn('  ⚠ backfill_prequel_from_edges failed:', backfillError.message);
       console.warn('    Ensure migration 017 has been applied.');
@@ -289,12 +290,11 @@ async function main() {
 
   // -------------------------------------------------------------------------
   // Step 4 — Run the full catalog pipeline
-  // Recomputes catalog_type, franchise_root_id chains, franchise_episode_total
-  // (now using the updated next_airing_episode values), and title_normalized.
   // -------------------------------------------------------------------------
 
   console.log('\nRunning catalog pipeline…');
   const { error: catalogError } = await supabase.rpc('refresh_catalog');
+
   if (catalogError) {
     console.warn('  ⚠ refresh_catalog failed:', catalogError.message);
     console.warn('    Ensure migrations 013–020 have been applied.');
