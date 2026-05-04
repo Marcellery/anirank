@@ -15,14 +15,17 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.anirank.app"
+      "bundleIdentifier": "com.anirank.app",
+      "minimumOsVersion": "16.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0d0d14"
       },
-      "package": "com.anirank.app"
+      "package": "com.anirank.app",
+      "minSdkVersion": 26,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",

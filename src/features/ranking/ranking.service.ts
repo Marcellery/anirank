@@ -58,23 +58,10 @@ export async function getTop10(userId: string): Promise<UserRanking[]> {
 // ---------------------------------------------------------------------------
 
 /**
- * Re-compute and persist rank_position for all of a user's rankings.
- * Reads the current Elo order and writes each position as an integer.
- *
- * Milestone 5 will migrate this to a Supabase RPC for efficiency.
+ * Re-compute and persist rank_position for all of a user's rankings via RPC.
+ * Single DB round-trip using a window function (see migration 026).
  */
 export async function recomputeRankPositions(userId: string): Promise<void> {
-  const ranked = await getRankedList(userId);
-
-  // Build batch of updates
-  const updates = ranked.map((entry, index) =>
-    supabase
-      .from('user_rankings')
-      .update({ rank_position: index + 1 })
-      .eq('id', entry.id),
-  );
-
-  const results = await Promise.all(updates);
-  const firstError = results.find(r => r.error)?.error;
-  if (firstError) throw firstError;
+  const { error } = await supabase.rpc('recompute_rank_positions', { p_user_id: userId });
+  if (error) throw error;
 }

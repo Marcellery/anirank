@@ -1,9 +1,5 @@
-/**
- * Shared UI atoms barrel.
- *
- * Will export (Milestone 3+):
- *   Button, Text, Card, Badge, Avatar, Spinner, Divider
- *
- * Components are stateless, receive only props, import from @constants.
- * No Supabase or store imports allowed in this folder.
- */
+export { Avatar } from './Avatar';
+export { Badge } from './Badge';
+export { Button } from './Button';
+export { Card } from './Card';
+export { Spinner } from './Spinner';
