@@ -1,10 +1,7 @@
 import { Tabs } from 'expo-router';
 import { COLORS } from '@constants/colors';
+import { TabBarIcon } from '@layout/TabBarIcon';
 
-/**
- * Tab navigator — 4 main tabs as per APP_SCREEN_MAP.md.
- * Icons will be wired in Milestone 5 once the icon set is finalised.
- */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -19,10 +16,34 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: COLORS.textMuted,
       }}
     >
-      <Tabs.Screen name="battles" options={{ title: 'Battles' }} />
-      <Tabs.Screen name="rankings" options={{ title: 'Rankings' }} />
-      <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen
+        name="battles"
+        options={{
+          title: 'Battles',
+          tabBarIcon: ({ focused }) => <TabBarIcon name="flash" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rankings"
+        options={{
+          title: 'Rankings',
+          tabBarIcon: ({ focused }) => <TabBarIcon name="list" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: 'Friends',
+          tabBarIcon: ({ focused }) => <TabBarIcon name="people" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ focused }) => <TabBarIcon name="person" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }

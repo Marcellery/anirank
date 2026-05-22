@@ -2,10 +2,10 @@
 create table public.user_battles (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid not null references auth.users (id) on delete cascade,
-  anime_a_id      int  not null references public.anime (id) on delete cascade,
-  anime_b_id      int  not null references public.anime (id) on delete cascade,
-  winner_anime_id int  not null references public.anime (id) on delete cascade,
-  loser_anime_id  int  not null references public.anime (id) on delete cascade,
+  anime_a_id      uuid not null references public.anime (id) on delete cascade,
+  anime_b_id      uuid not null references public.anime (id) on delete cascade,
+  winner_anime_id uuid not null references public.anime (id) on delete cascade,
+  loser_anime_id  uuid not null references public.anime (id) on delete cascade,
   created_at      timestamptz not null default now(),
 
   constraint user_battles_anime_different
@@ -39,7 +39,7 @@ create policy "users can insert own battles"
 create table public.user_anime_rank_state (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid             not null references auth.users (id) on delete cascade,
-  anime_id        int              not null references public.anime (id) on delete cascade,
+  anime_id        uuid             not null references public.anime (id) on delete cascade,
   hidden_rating   double precision not null default 1500,
   battle_count    int              not null default 0,
   wins            int              not null default 0,

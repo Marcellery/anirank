@@ -1,5 +1,6 @@
 import { supabase } from '@services/supabase';
 import { calculateEloUpdate } from '@utils/elo';
+import { recomputeRankPositions } from '@features/ranking/ranking.service';
 import type { Database } from '@app-types/index';
 
 type UserRankingRow = Database['public']['Tables']['user_rankings']['Row'];
@@ -84,6 +85,8 @@ export async function recordBattleResult(
     .eq('user_id', userId)
     .eq('anime_id', loserId);
   if (loseError) throw loseError;
+
+  await recomputeRankPositions(userId);
 
   return { newWinnerElo: newWinnerRating, newLoserElo: newLoserRating };
 }

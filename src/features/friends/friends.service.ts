@@ -118,25 +118,5 @@ export async function removeFriend(friendId: string): Promise<void> {
   if (error) throw error;
 }
 
-// ---------------------------------------------------------------------------
-// Profile search — used when adding a new friend by username
-// ---------------------------------------------------------------------------
-
-/**
- * Search profiles by username prefix.
- * Returns up to 10 results, excluding the current user.
- */
-export async function searchProfiles(
-  query: string,
-  currentUserId: string,
-): Promise<ProfileRow[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .ilike('username', `${query}%`)
-    .neq('id', currentUserId)
-    .limit(10);
-
-  if (error) throw error;
-  return data ?? [];
-}
+// Profile search delegated to profile.service
+export { searchProfiles } from '@services/profile.service';
