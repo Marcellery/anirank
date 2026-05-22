@@ -13,49 +13,37 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@stores/index';
-import { listAnime, searchAnime, addAnimeToList } from '@features/anime/anime.service';
+import {
+  searchAniList,
+  listAniListPopular,
+  addPickerAnimeToList,
+  type PickerAnime,
+} from '@features/anime/anime.service';
 import { COLORS } from '@constants/colors';
-import type { Database } from '@app-types/database';
 
-type AnimeRow = Database['public']['Tables']['anime']['Row'];
-
-const MIN_ANIME = 2; // Minimum needed to do battles
+const MIN_ANIME    = 2;
 const RECOMMEND_ANIME = 5;
 
-// ---------------------------------------------------------------------------
-// Step identifiers
-// ---------------------------------------------------------------------------
 type Step = 'welcome' | 'pick-anime';
 
 // ---------------------------------------------------------------------------
-// Anime card used in the picker
+// Anime card
 // ---------------------------------------------------------------------------
 function AnimeCard({
   anime,
   selected,
   onToggle,
 }: {
-  anime: AnimeRow;
+  anime:    PickerAnime;
   selected: boolean;
   onToggle: () => void;
 }) {
-  // Prefer higher-quality cover images; fall back to legacy poster field
-  const imageUri =
-    anime.cover_image_medium ?? anime.cover_image_large ?? anime.poster ?? null;
-
-  // Prefer English title, fall back to romaji, then the generic title column
-  const displayTitle =
-    anime.title_english ?? anime.title_romaji ?? anime.title;
-
-  // Build a concise meta string: format · year · N eps
-  const year = anime.season_year ?? anime.release_year;
-  const fmt  = anime.format ?? (anime.type === 'movie' ? 'MOVIE' : 'TV');
-  // franchise_episode_total is the sum across all seasons; fall back to the
-  // per-row episode count for standalone entries that have no sequels.
-  const eps  = anime.franchise_episode_total ?? anime.episodes ?? anime.episode_count;
+  const imageUri    = anime.cover_image_medium ?? anime.cover_image_large ?? null;
+  const displayTitle = anime.title_english ?? anime.title_romaji ?? '—';
+  const eps  = anime.episodes;
   const meta = [
-    fmt,
-    year,
+    anime.format,
+    anime.season_year,
     eps ? `${eps} eps` : null,
   ].filter(Boolean).join(' · ');
 
@@ -99,36 +87,35 @@ export default function OnboardingScreen() {
 
   const [step, setStep] = useState<Step>('welcome');
 
-  // Anime picker state
-  const [catalogue, setCatalogue] = useState<AnimeRow[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<AnimeRow[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingCatalogue, setIsLoadingCatalogue] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [popular,       setPopular]       = useState<PickerAnime[]>([]);
+  const [searchResults, setSearchResults] = useState<PickerAnime[]>([]);
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [isSearching,   setIsSearching]   = useState(false);
+  const [isLoadingList, setIsLoadingList] = useState(false);
 
-  // Load the catalogue when entering the anime step
+  // Map of anilist_id (as string) → PickerAnime so we have data at completion.
+  const [selected, setSelected] = useState<Map<string, PickerAnime>>(new Map());
+
+  const [isSaving,   setIsSaving]   = useState(false);
+  const [saveError,  setSaveError]  = useState<string | null>(null);
+
   useEffect(() => {
-    if (step === 'pick-anime') {
-      loadCatalogue();
-    }
+    if (step === 'pick-anime') loadPopular();
   }, [step]);
 
-  async function loadCatalogue() {
-    setIsLoadingCatalogue(true);
+  async function loadPopular() {
+    setIsLoadingList(true);
     try {
-      const data = await listAnime(0, 50);
-      setCatalogue(data);
+      const data = await listAniListPopular(1, 50);
+      setPopular(data);
     } catch {
-      // If loading fails, catalogue stays empty; user can still search
+      // stay empty; user can still search
     } finally {
-      setIsLoadingCatalogue(false);
+      setIsLoadingList(false);
     }
   }
 
-  // Debounced search
+  // Debounced search against AniList
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -138,7 +125,7 @@ export default function OnboardingScreen() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const results = await searchAnime(searchQuery.trim(), 30);
+        const results = await searchAniList(searchQuery.trim(), 30);
         setSearchResults(results);
       } catch {
         setSearchResults([]);
@@ -150,13 +137,14 @@ export default function OnboardingScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  function toggleAnime(id: string) {
+  function toggleAnime(anime: PickerAnime) {
+    const key = String(anime.anilist_id);
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+      const next = new Map(prev);
+      if (next.has(key)) {
+        next.delete(key);
       } else {
-        next.add(id);
+        next.set(key, anime);
       }
       return next;
     });
@@ -170,18 +158,8 @@ export default function OnboardingScreen() {
     setIsSaving(true);
 
     try {
-      // Add all selected anime to the user's list sequentially.
-      // Each insert triggers the DB to create a user_rankings row at Elo 1500.
-      await Promise.all(
-        Array.from(selected).map((animeId) =>
-          addAnimeToList(user.id, animeId, 'plan_to_watch'),
-        ),
-      );
-
-      // Mark onboarding as done in the store
+      await addPickerAnimeToList(user.id, [...selected.values()], 'plan_to_watch');
       setHasCompletedOnboarding(true);
-
-      // Navigate to main app
       router.replace('/(tabs)/battles');
     } catch (e: any) {
       setSaveError(e?.message ?? 'Something went wrong. Please try again.');
@@ -226,8 +204,8 @@ export default function OnboardingScreen() {
   // ---------------------------------------------------------------------------
   // Step: Pick anime
   // ---------------------------------------------------------------------------
-  const displayList = searchQuery.trim() ? searchResults : catalogue;
-  const hasEnough = selected.size >= MIN_ANIME;
+  const displayList  = searchQuery.trim() ? searchResults : popular;
+  const hasEnough    = selected.size >= MIN_ANIME;
 
   return (
     <KeyboardAvoidingView
@@ -267,7 +245,7 @@ export default function OnboardingScreen() {
       </View>
 
       {/* List */}
-      {isLoadingCatalogue ? (
+      {isLoadingList ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -276,18 +254,18 @@ export default function OnboardingScreen() {
           <Text style={styles.emptyText}>
             {searchQuery.trim()
               ? 'No results found. Try a different title.'
-              : 'No anime in the catalogue yet.\nYou can come back and add more later.'}
+              : 'Could not load anime. Check your connection.'}
           </Text>
         </View>
       ) : (
         <FlatList
           data={displayList}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.anilist_id)}
           renderItem={({ item }) => (
             <AnimeCard
               anime={item}
-              selected={selected.has(item.id)}
-              onToggle={() => toggleAnime(item.id)}
+              selected={selected.has(String(item.anilist_id))}
+              onToggle={() => toggleAnime(item)}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -334,7 +312,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
 
-  // Welcome step
   welcomeContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -369,7 +346,6 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
 
-  // Buttons
   primaryButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 12,
@@ -389,7 +365,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Anime picker header
   pickerHeader: {
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingHorizontal: 20,
@@ -407,7 +382,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  // Search
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,7 +403,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // List
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -447,7 +420,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Anime card
   animeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -513,7 +485,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Footer
   pickerFooter: {
     paddingHorizontal: 16,
     paddingBottom: Platform.OS === 'ios' ? 36 : 20,

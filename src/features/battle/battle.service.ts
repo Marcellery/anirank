@@ -24,8 +24,10 @@ export type RankedAnime = UserRankingRow & { anime: AnimeRow };
 export async function loadUserRankings(userId: string): Promise<RankedAnime[]> {
   const { data, error } = await supabase
     .from('user_rankings')
-    .select('*, anime(*)')
+    .select('*, anime!inner(*)')
     .eq('user_id', userId)
+    .or('format.is.null,format.neq.MOVIE', { referencedTable: 'anime' })
+    .or('type.is.null,type.neq.movie', { referencedTable: 'anime' })
     .order('elo_score', { ascending: false });
 
   if (error) throw error;

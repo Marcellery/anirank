@@ -198,6 +198,7 @@ async function main() {
   const batches = chunk(anilistIds, BATCH_SIZE);
   let totalUpdated = 0;
   const allReverseEdges: Array<{ anilist_id: number; prequel_anilist_id: number }> = [];
+  const allSpinoffEdges: Array<{ spinoff_anilist_id: number; parent_anilist_id: number }> = [];
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
@@ -218,6 +219,12 @@ async function main() {
           (edge.node.format === 'TV' || edge.node.format === 'TV_SHORT')
         ) {
           allReverseEdges.push({ anilist_id: edge.node.id, prequel_anilist_id: m.id });
+        }
+        if (
+          (edge.relationType === 'SPIN_OFF' || edge.relationType === 'SIDE_STORY') &&
+          (edge.node.format === 'TV' || edge.node.format === 'TV_SHORT')
+        ) {
+          allSpinoffEdges.push({ spinoff_anilist_id: edge.node.id, parent_anilist_id: m.id });
         }
       }
     }
@@ -285,6 +292,31 @@ async function main() {
       console.warn('    Ensure migration 017 has been applied.');
     } else {
       console.log('  ✓ Prequel backfill complete.');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Step 3b — Backfill franchise_root_id from SPIN_OFF / SIDE_STORY edges
+  // -------------------------------------------------------------------------
+
+  const seenSpinoff = new Set<number>();
+  const uniqueSpinoffEdges = allSpinoffEdges.filter((e) => {
+    if (seenSpinoff.has(e.spinoff_anilist_id)) return false;
+    seenSpinoff.add(e.spinoff_anilist_id);
+    return true;
+  });
+
+  if (uniqueSpinoffEdges.length > 0) {
+    console.log(`\nBackfilling franchise_root_id for ${uniqueSpinoffEdges.length} spinoff/side-story entries…`);
+    const { error: spinoffError } = await supabase.rpc('backfill_spinoff_roots', {
+      edges: uniqueSpinoffEdges,
+    });
+
+    if (spinoffError) {
+      console.warn('  ⚠ backfill_spinoff_roots failed:', spinoffError.message);
+      console.warn('    Ensure migration 027 has been applied.');
+    } else {
+      console.log('  ✓ Spinoff backfill complete.');
     }
   }
 
